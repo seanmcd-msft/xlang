@@ -15,6 +15,8 @@
 #include "wil/result.h"
 #include "extwinrt.h"
 
+#include <iostream>
+
 #define WIN1019H1_BLDNUM 18362
 
 // Ensure that metadata resolution functions are imported so they can be detoured
@@ -193,6 +195,7 @@ HRESULT WINAPI RoActivateInstanceDetour(HSTRING activatableClassId, IInspectable
     HRESULT hr = GetActivationLocation(activatableClassId, location);
     if (hr == REGDB_E_CLASSNOTREG)
     {
+        std::cout << "Calling TrueRoActivateInstance" << std::endl;
         return TrueRoActivateInstance(activatableClassId, instance);
     }
     RETURN_IF_FAILED(hr);
@@ -241,6 +244,7 @@ HRESULT WINAPI RoGetActivationFactoryDetour(HSTRING activatableClassId, REFIID i
     HRESULT hr = GetActivationLocation(activatableClassId, location);
     if (hr == REGDB_E_CLASSNOTREG)
     {
+        std::cout << "Calling TrueRoGetActivationFactory" << std::endl;
         return TrueRoGetActivationFactory(activatableClassId, iid, factory);
     }
     RETURN_IF_FAILED(hr);
@@ -288,7 +292,9 @@ HRESULT WINAPI RoGetMetaDataFileDetour(
     HRESULT hr = WinRTGetMetadataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
     if (FAILED(hr))
     {
-       return TrueRoGetMetaDataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
+       std::cout << "Calling TrueRoGetMetaDataFile" << std::endl;
+       hr = TrueRoGetMetaDataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
+       std::cout << hr << std::endl;
     }
     return hr;
 }
