@@ -16,6 +16,7 @@
 #include "extwinrt.h"
 #include <wil/filesystem.h>
 #include <iostream>
+#include <RoMetadataApi.h>
 
 #define WIN1019H1_BLDNUM 18362
 
@@ -334,6 +335,7 @@ HRESULT WINAPI RoResolveNamespaceDetour(
     DWORD* subNamespacesCount,
     HSTRING** subNamespaces)
 {
+    std::wcout << "Diagnostics " << std::endl;
     HSTRING exepath = Microsoft::WRL::Wrappers::HStringReference(exeFilePath.c_str()).Get();
     bool fFileExists = true;
     DWORD dwFileAttributes;
@@ -351,6 +353,24 @@ HRESULT WINAPI RoResolveNamespaceDetour(
     {
         std::wcout << "TestComponent does not exists " << std::endl;
     }
+    CoInitialize(nullptr);
+    mdTypeDef cl;
+    wchar_t szMetaDataFile[MAX_PATH + 1] = { 0 };
+    IMetaDataDispenserEx* pMetaDataDispenser = nullptr;
+    IMetaDataImport2* pMetaDataImport = nullptr;
+    RETURN_IF_FAILED(CoCreateInstance(
+        CLSID_CorMetaDataDispenser,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_IMetaDataDispenserEx,
+        reinterpret_cast<void**>(&pMetaDataDispenser)));
+
+    RETURN_IF_FAILED(pMetaDataDispenser->OpenScope(
+        L"TestComponent.winmd",
+        ofReadOnly,
+        IID_IMetaDataImport2,
+        reinterpret_cast<IUnknown**>(&pMetaDataImport)));
+    RETURN_IF_FAILED(pMetaDataImport->FindTypeDefByName(L"TestComponent.ClassSta", mdTokenNil, &cl));
 
     std::wcout << "Calling RoResolveNamespaceDetour " << std::endl;
     HRESULT hr = TrueRoResolveNamespace(name, exepath,
