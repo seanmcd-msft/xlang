@@ -293,6 +293,12 @@ HRESULT WINAPI RoGetMetaDataFileDetour(
     if (FAILED(hr))
     {
        std::cout << "Calling TrueRoGetMetaDataFile" << std::endl;
+       std::cout << "dispenser " << metaDataDispenser << std::endl;
+       std::cout << "filepath " << metaDataFilePath << std::endl;
+       std::cout << "import " << metaDataImport << std::endl;
+       unsigned int size;
+       wchar_t const* buffer = WindowsGetStringRawBuffer(name, &size);
+       std::wcout << std::wstring(buffer, size).c_str() << std::endl;
        hr = TrueRoGetMetaDataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
        std::cout << hr << std::endl;
     }
