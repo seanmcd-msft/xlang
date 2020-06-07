@@ -14,7 +14,7 @@
 #include <VersionHelpers.h>
 #include "wil/result.h"
 #include "extwinrt.h"
-
+#include <wil/filesystem.h>
 #include <iostream>
 
 #define WIN1019H1_BLDNUM 18362
@@ -299,6 +299,25 @@ HRESULT WINAPI RoGetMetaDataFileDetour(
        unsigned int size;
        wchar_t const* buffer = WindowsGetStringRawBuffer(name, &size);
        std::wcout << std::wstring(buffer, size).c_str() << std::endl;
+
+       wil::unique_process_heap_string localExePath;
+       HRESULT hr = wil::GetModuleFileNameW(nullptr, localExePath);
+       if (FAILED_LOG(hr))
+       {
+           SetLastError(hr);
+           return FALSE;
+       }
+
+       // Modify the retrieved string to truncate the actual exe name and leave the containing directory path. This API
+       // expects a buffer size including the terminating null, so add 1 to the string length.
+       hr = PathCchRemoveFileSpec(localExePath.get(), wcslen(localExePath.get()) + 1);
+       if (FAILED_LOG(hr))
+       {
+           SetLastError(hr);
+           return FALSE;
+       }
+       std::wcout << localExePath.get() << std::endl;
+
        hr = TrueRoGetMetaDataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
        std::cout << hr << std::endl;
     }
