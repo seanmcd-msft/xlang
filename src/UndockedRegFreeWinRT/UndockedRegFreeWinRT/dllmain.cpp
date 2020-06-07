@@ -298,6 +298,7 @@ HRESULT WINAPI RoGetMetaDataFileDetour(
     HRESULT hr = WinRTGetMetadataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
     if (FAILED(hr))
     {
+        std::cout << hr << std::endl;
         std::cout << "Calling TrueRoGetMetaDataFile" << std::endl;
        //wil::unique_process_heap_string localExePath;
        //HRESULT hr = wil::GetModuleFileNameW(nullptr, localExePath);
