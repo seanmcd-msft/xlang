@@ -209,6 +209,8 @@ HRESULT WinRTGetMetadataFile(
     DWORD metaDataFilePathsCount = 0;
     HSTRING* metaDataFilePaths;
     HSTRING exepath = HStringReference(exeFilePath.c_str()).Get();
+
+
     RETURN_IF_FAILED(RoResolveNamespace(name, exepath,
         0, nullptr,
         &metaDataFilePathsCount, &metaDataFilePaths,
