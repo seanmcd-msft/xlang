@@ -335,6 +335,23 @@ HRESULT WINAPI RoResolveNamespaceDetour(
     HSTRING** subNamespaces)
 {
     HSTRING exepath = Microsoft::WRL::Wrappers::HStringReference(exeFilePath.c_str()).Get();
+    bool fFileExists = true;
+    DWORD dwFileAttributes;
+    dwFileAttributes = GetFileAttributes(L"TestComponent.winmd");
+    if ((dwFileAttributes == INVALID_FILE_ATTRIBUTES) ||
+        (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        fFileExists = false;
+    }
+    if (fFileExists)
+    {
+        std::wcout << "TestComponent exists " << std::endl;
+    }
+    else
+    {
+        std::wcout << "TestComponent does not exists " << std::endl;
+    }
+
     std::wcout << "Calling RoResolveNamespaceDetour " << std::endl;
     HRESULT hr = TrueRoResolveNamespace(name, exepath,
         packageGraphDirsCount, packageGraphDirs,
