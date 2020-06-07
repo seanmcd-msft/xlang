@@ -289,34 +289,33 @@ HRESULT WINAPI RoGetMetaDataFileDetour(
     IMetaDataImport2** metaDataImport,
     mdTypeDef* typeDefToken)
 {
+    std::cout << "dispenser " << metaDataDispenser << std::endl;
+    std::cout << "filepath " << metaDataFilePath << std::endl;
+    std::cout << "import " << metaDataImport << std::endl;
+    unsigned int size;
+    wchar_t const* buffer = WindowsGetStringRawBuffer(name, &size);
+    std::wcout << std::wstring(buffer, size).c_str() << std::endl;
     HRESULT hr = WinRTGetMetadataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
     if (FAILED(hr))
     {
-       std::cout << "Calling TrueRoGetMetaDataFile" << std::endl;
-       std::cout << "dispenser " << metaDataDispenser << std::endl;
-       std::cout << "filepath " << metaDataFilePath << std::endl;
-       std::cout << "import " << metaDataImport << std::endl;
-       unsigned int size;
-       wchar_t const* buffer = WindowsGetStringRawBuffer(name, &size);
-       std::wcout << std::wstring(buffer, size).c_str() << std::endl;
+        std::cout << "Calling TrueRoGetMetaDataFile" << std::endl;
+       //wil::unique_process_heap_string localExePath;
+       //HRESULT hr = wil::GetModuleFileNameW(nullptr, localExePath);
+       //if (FAILED_LOG(hr))
+       //{
+       //    SetLastError(hr);
+       //    return FALSE;
+       //}
 
-       wil::unique_process_heap_string localExePath;
-       HRESULT hr = wil::GetModuleFileNameW(nullptr, localExePath);
-       if (FAILED_LOG(hr))
-       {
-           SetLastError(hr);
-           return FALSE;
-       }
-
-       // Modify the retrieved string to truncate the actual exe name and leave the containing directory path. This API
-       // expects a buffer size including the terminating null, so add 1 to the string length.
-       hr = PathCchRemoveFileSpec(localExePath.get(), wcslen(localExePath.get()) + 1);
-       if (FAILED_LOG(hr))
-       {
-           SetLastError(hr);
-           return FALSE;
-       }
-       std::wcout << localExePath.get() << std::endl;
+       //// Modify the retrieved string to truncate the actual exe name and leave the containing directory path. This API
+       //// expects a buffer size including the terminating null, so add 1 to the string length.
+       //hr = PathCchRemoveFileSpec(localExePath.get(), wcslen(localExePath.get()) + 1);
+       //if (FAILED_LOG(hr))
+       //{
+       //    SetLastError(hr);
+       //    return FALSE;
+       //}
+       //std::wcout << localExePath.get() << std::endl;
 
        hr = TrueRoGetMetaDataFile(name, metaDataDispenser, metaDataFilePath, metaDataImport, typeDefToken);
        std::cout << hr << std::endl;
