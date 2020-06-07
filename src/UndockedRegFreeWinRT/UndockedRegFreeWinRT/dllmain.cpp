@@ -343,7 +343,7 @@ HRESULT WINAPI RoResolveNamespaceDetour(
 
     if (FAILED(hr))
     {
-        std::wcout << "Calling TrueRoResolveNamespace" << std::endl;
+        std::wcout << "Calling TrueRoResolveNamespace  " << hr << std::endl;
         hr = TrueRoResolveNamespace(name, windowsMetaDataDir,
             packageGraphDirsCount, packageGraphDirs,
             metaDataFilePathsCount, metaDataFilePaths,
