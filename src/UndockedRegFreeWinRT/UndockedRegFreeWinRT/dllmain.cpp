@@ -1,3 +1,4 @@
+#include <vector>
 #include <Windows.h>
 #include <synchapi.h>
 #include <roapi.h>
@@ -58,7 +59,7 @@ static decltype(RoGetActivationFactory)* TrueRoGetActivationFactory = RoGetActiv
 static decltype(RoGetMetaDataFile)* TrueRoGetMetaDataFile = RoGetMetaDataFile;
 static decltype(RoResolveNamespace)* TrueRoResolveNamespace = RoResolveNamespace;
 
-std::wstring exeFilePath;
+std::vector<std::wstring> manifestDirs;
 
 enum class ActivationLocation
 {
@@ -302,23 +303,28 @@ HRESULT WINAPI RoResolveNamespaceDetour(
     DWORD* subNamespacesCount,
     HSTRING** subNamespaces)
 {
-    HRESULT hr = TrueRoResolveNamespace(name, Microsoft::WRL::Wrappers::HStringReference(exeFilePath.c_str()).Get(),
+
+    std::vector<HSTRING> h;
+
+    for (auto& dir : manifestDirs) {
+        h.push_back(Microsoft::WRL::Wrappers::HStringReference(dir.c_str()).Get());
+    }
+    HRESULT hr = TrueRoResolveNamespace(name, windowsMetaDataDir,
+        static_cast<DWORD>(h.size()), h.data(),
+        metaDataFilePathsCount, metaDataFilePaths,
+        subNamespacesCount, subNamespaces);
+    if (SUCCEEDED(hr)) {
+        return hr;
+    }
+    return TrueRoResolveNamespace(name, windowsMetaDataDir,
         packageGraphDirsCount, packageGraphDirs,
         metaDataFilePathsCount, metaDataFilePaths,
         subNamespacesCount, subNamespaces);
-
-    if (FAILED(hr))
-    {
-        hr = TrueRoResolveNamespace(name, windowsMetaDataDir,
-            packageGraphDirsCount, packageGraphDirs,
-            metaDataFilePathsCount, metaDataFilePaths,
-            subNamespacesCount, subNamespaces);
-    }
-    return hr;
 }
 
 void InstallHooks()
 {
+
     if (DetourIsHelperProcess()) {
         return;
     }
@@ -326,7 +332,7 @@ void InstallHooks()
     WCHAR filePath[MAX_PATH];
     GetModuleFileNameW(nullptr, filePath, _countof(filePath));
     std::wstring::size_type pos = std::wstring(filePath).find_last_of(L"\\/");
-    exeFilePath = std::wstring(filePath).substr(0, pos);
+    manifestDirs.push_back(std::wstring(filePath).substr(0, pos));
 
     DetourRestoreAfterWith();
 
@@ -358,16 +364,16 @@ HRESULT ExtRoLoadCatalog()
     std::wstring manifestPath(filePath);
     manifestPath += L".manifest";
 
-    return WinRTLoadComponent(manifestPath.c_str());
+    return WinRTLoadComponent(manifestPath);
 }
 
 
 BOOL WINAPI DllMain(HINSTANCE hmodule, DWORD reason, LPVOID /*lpvReserved*/)
 {
-    if (IsWindows1019H1OrGreater())
-    {
-        return true;
-    }
+    //if (IsWindows1019H1OrGreater())
+    //{
+    //    return true;
+    //}
     if (reason == DLL_PROCESS_ATTACH)
     {
         DisableThreadLibraryCalls(hmodule);
@@ -394,7 +400,16 @@ HRESULT WINAPI RegFreeWinRTUninitializeForTest()
     return S_OK;
 }
 
-extern "C" void WINAPI winrtact_Initialize()
-{
-    return;
+extern "C" {
+
+    void WINAPI winrtact_Initialize() {
+        return;
+    }
+
+    void WINAPI winrtact_InitializeWithPath(PCWSTR manifestName) {
+        std::wstring name{manifestName};
+        WinRTLoadComponent(name);
+        return;
+    }
+
 }

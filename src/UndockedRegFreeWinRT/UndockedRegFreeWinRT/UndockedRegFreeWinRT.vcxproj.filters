@@ -33,8 +33,10 @@
     <ClInclude Include="catalog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="extwinrt.h">
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="extwinrt.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>
