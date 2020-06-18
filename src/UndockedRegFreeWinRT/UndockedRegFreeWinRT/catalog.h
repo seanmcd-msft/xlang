@@ -5,7 +5,7 @@
 #include "wil/result.h"
 #include "wil/resource.h"
 
-HRESULT WinRTLoadComponent(PCWSTR componentPath);
+HRESULT WinRTLoadComponent(std::wstring componentPath);
 
 HRESULT WinRTGetThreadingModel(
     HSTRING activatableClassId,
@@ -23,4 +23,4 @@ HRESULT WinRTGetMetadataFile(
     IMetaDataImport2** metaDataImport,
     mdTypeDef* typeDefToken);
 
-extern std::wstring exeFilePath;
+extern std::vector<std::wstring> manifestDirs;

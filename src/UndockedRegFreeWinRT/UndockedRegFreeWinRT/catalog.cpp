@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <codecvt>
 #include <locale>
+#include <filesystem>
 #include "catalog.h"
 
 using namespace std;
@@ -81,7 +82,7 @@ struct component
 
 static unordered_map < wstring, shared_ptr<component> > g_types;
 
-HRESULT WinRTLoadComponent(PCWSTR manifest_path)
+HRESULT WinRTLoadComponent(wstring manifest_path)
 {
     ComPtr<IStream> fileStream;
     ComPtr<IXmlReader> xmlReader;
@@ -89,9 +90,15 @@ HRESULT WinRTLoadComponent(PCWSTR manifest_path)
     const WCHAR* localName = L"";
     auto locale = _create_locale(LC_ALL, "C");
 
-    RETURN_IF_FAILED(SHCreateStreamOnFileEx(manifest_path, STGM_READ, FILE_ATTRIBUTE_NORMAL, false, nullptr, &fileStream));
+    //printf("%s opening manifest stream from %ls\n", __FUNCTION__, manifest_path.c_str());
+
+    RETURN_IF_FAILED(SHCreateStreamOnFileEx(manifest_path.c_str(), STGM_READ, FILE_ATTRIBUTE_NORMAL, false, nullptr, &fileStream));
     RETURN_IF_FAILED(CreateXmlReader(__uuidof(IXmlReader), (void**)&xmlReader, nullptr));
     RETURN_IF_FAILED(xmlReader->SetInput(fileStream.Get()));
+    filesystem::path manifestDir{manifest_path};
+    manifestDir.remove_filename();
+    //printf("%s processing xml\n", __FUNCTION__);
+
     const WCHAR* fileName;
     while (S_OK == xmlReader->Read(&nodeType))
     {
@@ -111,7 +118,9 @@ HRESULT WinRTLoadComponent(PCWSTR manifest_path)
                         if (_wcsicmp_l(localName, L"activatableClass", locale) == 0)
                         {
                             auto this_component = make_shared<component>();
-                            this_component->module_name = fileName;
+                            filesystem::path moduleName{manifestDir};
+                            moduleName /= fileName;
+                            this_component->module_name = moduleName.wstring();
 
                             const WCHAR* threadingModel;
                             RETURN_IF_FAILED(xmlReader->MoveToAttributeByName(L"threadingModel", nullptr));
@@ -149,19 +158,25 @@ HRESULT WinRTLoadComponent(PCWSTR manifest_path)
             }
         }
     }
-
+    //printf("%s processed manifest. adding %ls\n", __FUNCTION__, static_cast<wstring>(manifestDir).c_str());
+    // if we haven't failed add the manifestdir to the places to search for .winmd for namespace resolution
+    wstring td{static_cast<wstring>(manifestDir)};
+    td.pop_back();
+    manifestDirs.push_back(td);
     return S_OK;
 }
 
 HRESULT WinRTGetThreadingModel(HSTRING activatableClassId, ABI::Windows::Foundation::ThreadingType* threading_model)
 {
     auto raw_class_name = WindowsGetStringRawBuffer(activatableClassId, nullptr);
+    //printf("%s %ls\n", __FUNCTION__, raw_class_name);
     auto component_iter = g_types.find(raw_class_name);
     if (component_iter != g_types.end())
     {
         *threading_model = component_iter->second->threading_model;
         return S_OK;
     }
+    //printf("%s class not reg\n", __FUNCTION__);
     return REGDB_E_CLASSNOTREG;
 }
 
@@ -206,11 +221,17 @@ HRESULT WinRTGetMetadataFile(
     }
     
     wil::unique_cotaskmem_array_ptr<wil::unique_hstring> metaDataFilePaths;
-    RETURN_IF_FAILED(RoResolveNamespace(name, HStringReference(exeFilePath.c_str()).Get(),
-        0, nullptr,
-        metaDataFilePaths.size_address<DWORD>(), &metaDataFilePaths,
-        0, nullptr));
-
+    hr = S_OK;
+    for (auto& dir : manifestDirs) {
+        hr = RoResolveNamespace(name, HStringReference(dir.c_str()).Get(),
+            0, nullptr,
+            metaDataFilePaths.size_address<DWORD>(), &metaDataFilePaths,
+            0, nullptr);
+        if (SUCCEEDED(hr)) {
+            break;
+        }
+    }
+    RETURN_IF_FAILED(hr);
     DWORD bestMatch = 0;
     int bestMatchLength = 0;
     for (DWORD i = 0; i < metaDataFilePaths.size(); i++)
