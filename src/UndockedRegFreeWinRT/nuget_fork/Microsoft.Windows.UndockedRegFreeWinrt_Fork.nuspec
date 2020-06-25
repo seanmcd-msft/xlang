@@ -1,0 +1,33 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata minClientVersion="2.5">
+    <id>Microsoft.Windows.UndockedRegFreeWinrt_Fork</id>
+    <version>0.0.1.0</version>
+    <title>Regfree WinRT Build Support Fork</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>fork of xlang proj component in order to support dll assemblies</description>
+    <releaseNotes></releaseNotes>
+    <tags>regfree WinRT</tags>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+    <license type="file">LICENSE</license>
+    <projectUrl>https://github.com/Microsoft/xlang</projectUrl>
+  </metadata>
+  <files>
+    <file src="LICENSE"/>
+    <file src="Microsoft.Windows.UndockedRegFreeWinrt.targets" target="build\native\"/>
+    <file src="readme.txt"/>
+    <file src="$buildoutdir$\extwinrt.h" target="include\"/>
+    <file src="$buildoutdir$\winrtact.lib" target="lib\"/>
+    <file src="$buildoutdir$\winrtact.dll"/>
+    <file src="$buildoutdir$\concrt140.dll"/>
+    <file src="$buildoutdir$\msvcp140.dll"/>
+    <file src="$buildoutdir$\msvcp140_1.dll"/>
+    <file src="$buildoutdir$\msvcp140_2.dll"/>
+    <file src="$buildoutdir$\msvcp140_codecvt_ids.dll"/>
+    <file src="$buildoutdir$\vccorlib140.dll"/>
+    <file src="$buildoutdir$\vcruntime140.dll"/>
+    <file src="$buildoutdir$\vcruntime140_1.dll"/>
+  </files>
+</package>
